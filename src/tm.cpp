@@ -88,6 +88,22 @@ CompressionResultsData tm(
   return data;
 }
 
+const int kMaxNumElems = 100000;
+const int kMaxNumThreads = 32;
+const int kNumTrials = 100;
+
+namespace {
+uint8_t Random8bit() {
+  return rand() & 0xFF;
+}
+
+template<typename T> T Random() {
+  T r(0);
+  for (size_t i = 0; i < sizeof(T); ++i) {
+    r |= static_cast<T>(Random8bit()) << (i * 8);
+  }
+  return r;
+}
 void tm_dynamical_profile(
     size_t states,
     size_t alphabet_size,
