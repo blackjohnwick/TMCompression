@@ -41,6 +41,35 @@ int& MarkovTable::at(const Char* characters){
     // std::cout<< "characters[k] -> " << characters[k]  << std::endl;
     return this->markovVector.at(( (str_to_index(characters) +1) * alphSz ) - (alphSz - characters[k]) ); 
 }
+template<typename T>
+class ParallelRadixSortTest : public testing::Test {};
+TYPED_TEST_CASE(ParallelRadixSortTest, SortingTypes);
+
+TYPED_TEST(ParallelRadixSortTest, KeySort) {
+  TypeParam *dat = new TypeParam[kMaxNumElems];
+  TypeParam *ans = new TypeParam[kMaxNumElems];
+  ASSERT_NE(reinterpret_cast<TypeParam*>(NULL), dat);
+  ASSERT_NE(reinterpret_cast<TypeParam*>(NULL), ans);
+
+  parallel_radix_sort::KeySort<TypeParam> key_sort;
+  key_sort.Init(kMaxNumElems, kMaxNumThreads);
+
+  for (int t = 0; t < kNumTrials; ++t) {
+    int num_elems = 1 + rand() % kMaxNumElems;
+    int num_threads = 1 + rand() % kMaxNumThreads;
+
+    FillRandom(dat, num_elems);
+
+    std::partial_sort_copy(dat, dat + num_elems, ans, ans + num_elems);
+    TypeParam *res = key_sort.Sort(dat, num_elems, num_threads);
+
+    for (int i = 0; i < num_elems; ++i) {
+      // std::cout << ans[i] << " " << res[i] << std::endl;
+      ASSERT_EQ(ans[i], res[i]);
+    }
+    // puts("");
+  }
+}
 
 std::vector<unsigned int> MarkovTable::getLine(const Char* characters){
     // std::cout<< "characters -> "<< *characters << std::endl;
