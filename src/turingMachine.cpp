@@ -53,6 +53,57 @@ StateMatrix::StateMatrix(size_t number_of_states, size_t alphabet_size):
 void StateMatrix::set_by_index(unsigned long long id) {
   auto rest = id;
   auto record_cardinality = this->nbStates * this->alphSz * 3;
+      INPUT = Fopen(argv[argc-1], "r"); 
+  nSeq = 0;
+  maxName = 0;
+  filtered = 0;
+  while((sym = fgetc(INPUT)) != EOF){
+
+    if(sym == '$' || sym == '#'){
+      if(fscanf(INPUT, "\t%lf\t%"PRIu64"\t%s\n", &fvalue, &fsize, fname) != 3){
+        fprintf(stderr, "  [x] Error: unknown type of file!\n");
+        exit(1);
+        }
+
+      if(PEYE->best == 1){
+        if(regexec(&regexCompiled, fname, 2, groupArray, 0) == 0){
+          char sourceCopy[strlen(fname) + 1];
+          strcpy(sourceCopy, fname);
+          sourceCopy[groupArray[1].rm_eo] = 0;
+          if(SearchSLabels(SL, sourceCopy + groupArray[1].rm_so) == 0){
+            ++unique;
+            AddSLabel(SL, sourceCopy + groupArray[1].rm_so);
+            UpdateSLabels(SL);
+            }
+          else{
+            ++filtered;
+            continue;
+            }
+          }
+        }
+
+      if(fsize > PEYE->upperSize ||  fsize < PEYE->lowerSize ||
+        fvalue > PEYE->upperSimi || fvalue < PEYE->lowerSimi){
+        ++filtered;
+        continue;
+        }
+
+      if(fsize > maxSize)
+        maxSize = fsize;
+ 
+      if(PEYE->best == 1){
+        if((tmp = strlen(SL->names[SL->idx-1])) > maxName)
+          maxName = tmp;
+        }
+      else{
+        if((tmp = strlen(fname)) > maxName)
+          maxName = tmp;
+        }
+      ++nSeq;
+      }
+    }
+  rewind(INPUT);
+    
   for (auto& st: this->v) {
     auto state_id = rest % record_cardinality;
     st = TuringRecord::by_index(state_id, this->nbStates, this->alphSz);
@@ -94,7 +145,32 @@ void StateMatrix::print() const{
       std::cout<<"----------";
     }
     std::cout << std::endl;
+    
+    
+FILTER *FIL = CreateFilter(PEYE->windowSize, PEYE->sampling, PEYE->windowType, 
+  PEYE->threshold);
+  INPUT = Fopen(argv[argc-1], "r"); 
+  while((sym = fgetc(INPUT)) != EOF){
+    if(sym == '#'){
+      if(fscanf(INPUT, "\t%lf\t%"PRIu64"\t%s\n", &fvalue, &fsize, fname) != 3){
+        fprintf(stderr, "  [x] Error: unknown type of file!\n");
+        exit(1);
+        }
 
+      if(fsize > PEYE->upperSize ||  fsize < PEYE->lowerSize ||
+        fvalue > PEYE->upperSimi || fvalue < PEYE->lowerSimi)
+        continue;
+
+      fprintf(stderr, "  [+] Filtering & segmenting %s ... ", fname);
+      fprintf(OUTPUT, "$\t%lf\t%"PRIu64"\t%s\n", fvalue, fsize, fname);
+      InitEntries(FIL, fsize, INPUT);
+      FilterStream(FIL, OUTPUT);
+      DeleteEntries(FIL);
+      fprintf(stderr, "Done!\n");
+      }
+    }
+  DeleteFilter(FIL);
+    
     for (auto ii=0u;ii< alphSz ; ii++){
         auto line = chr_line(ii);
         std::cout <<" " << ii << " |";
